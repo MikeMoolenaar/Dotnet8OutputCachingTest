@@ -18,6 +18,12 @@ app.MapGet("/", async () =>
 {
     await Task.Delay(2000);
     return "Hello World!";
+}).CacheOutput(x => x.Expire(TimeSpan.FromMinutes(10)).Tag("home"));
+
+app.MapGet("/purge-home-cache", async (IOutputCacheStore cache, CancellationToken cancellationToken) =>
+{
+    await cache.EvictByTagAsync("home", cancellationToken);
+    return "Purged cache with tag 'home'";
 }).CacheOutput(x => x.Expire(TimeSpan.FromSeconds(10)));
 
 app.MapGet("/chuck-noris-output-cache", async () =>
@@ -26,6 +32,7 @@ app.MapGet("/chuck-noris-output-cache", async () =>
     using var client = new HttpClient();
     var response = await client.GetAsync("https://api.chucknorris.io/jokes/random");
     var content = await response.Content.ReadAsStringAsync();
+    
     // Deserialize the response
     var joke = JsonSerializer.Deserialize<ChuckNorisJoke>(content);
     if (joke is null)
